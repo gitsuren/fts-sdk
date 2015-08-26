@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+				http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<context:component-scan base-package="com.suru.featuretoggle" />
+
+	<bean id="ftsCredentialProvider" class="org.apache.http.impl.client.BasicCredentialsProvider" />
+
+	<bean id="ftsMethodInvoke"
+		class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+		<property name="targetObject">
+			<ref local="ftsCredentialProvider" />
+		</property>
+		<property name="targetMethod" value="setCredentials">
+		</property>
+		<property name="arguments">
+			<list>
+				<ref local="ftsAuthScope" />
+				<ref local="ftsCredentials" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="ftsAuthScope" class="org.apache.http.auth.AuthScope">
+		<constructor-arg>
+			<null />
+		</constructor-arg>
+		<constructor-arg>
+			<value>-1</value>
+		</constructor-arg>
+		<constructor-arg>
+			<null />
+		</constructor-arg>
+		<constructor-arg>
+			<null />
+		</constructor-arg>
+	</bean>
+
+	<bean id="ftsCredentials" class="org.apache.http.auth.UsernamePasswordCredentials">
+		<constructor-arg index="0" value="SURU_USER" />
+		<constructor-arg index="1" value="autumn06" />
+	</bean>
+
+	<bean id="ftsHttpClientFactory"
+		class="org.springframework.http.client.HttpComponentsClientHttpRequestFactory">
+		<constructor-arg ref="ftsHttpClient" />
+	</bean>
+
+	<bean id="ftsHttpClient" class="org.apache.http.impl.client.DefaultHttpClient">
+		<property name="credentialsProvider" ref="ftsCredentialProvider" />
+	</bean>
+
+	<bean id="ftsRestTemplate" class="org.springframework.web.client.RestTemplate">
+		<constructor-arg ref="ftsHttpClientFactory" />
+	</bean>
+
+	<bean id="ftsRepository"
+		class="com.suru.featuretoggle.service.FeaturesByIDRepository">
+		<constructor-arg index="0"
+			value="https://localhost:8080/ftsweb/api/system/{systemName}/features/{id}" />
+		<constructor-arg index="1" value="SURENDRA" />
+		<constructor-arg index="2" ref="ftsRestTemplate" />
+	</bean>
+
+	<bean id="fts" class="com.suru.featuretoggle.service.FeatureService">
+		<constructor-arg index="0">
+			<bean class="com.suru.featuretoggle.service.cache.GuavaCacheStrategy">
+				<constructor-arg index="0" ref="ftsRepository" />
+				<constructor-arg index="1" value="1" />
+			</bean>
+		</constructor-arg>
+	</bean>
+</beans>
